@@ -1,43 +1,83 @@
-@extends('layouts.main')
+@extends('layouts.app')
+
+@section('title', 'Tambah Anggota')
 
 @section('content')
-    <div class="container">
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+
+            <div class="mb-4">
+                <h1 class="h3 fw-bold mb-1">Tambah Data Anggota</h1>
+                <p class="text-muted mb-0">Isi data anggota baru dengan lengkap.</p>
             </div>
-        @endif
-        <h1>Tambah Data anggota</h1>
-        <hr>
-        <form action="{{ route('anggota.store') }}" method="post">
-            @csrf
-            <label for="nisn" class="form form-label">NISN</label>
-            <input type="text" name="nisn" id="nisn" class="form form-control" pattern="[0-9]{10}"
-                inputmode="numeric" value="{{ old('nisn') }}" maxlength="10" required
-                placeholder="masukkan 10 digit angka"><br>
-            <label for="nama_anggota" class="form form-label">Nama Anggota</label>
-            <input type="text" name="nama_anggota" id="nama_anggota" class="form form-control"
-                value="{{ old('nama_anggota') }}" maxlength="255" required><br>
-            <label for="jenis_kelamin">Jenis Kelamin</label><br>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="jenis_kelamin" id="jk_l" value="L"
-                    {{ old('jenis_kelamin') == 'L' ? 'checked' : '' }} required>
-                <label for="jk_l" class="form-check-label">Laki-Laki</label>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <form action="{{ route('anggota.store') }}" method="POST">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label for="nisn" class="form-label fw-semibold">NISN</label>
+                            <input type="text" name="nisn" id="nisn" value="{{ old('nisn') }}"
+                                class="form-control @error('nisn') is-invalid @enderror" pattern="[0-9]{10}"
+                                title="NISN harus 10 digit angka" inputmode="numeric" maxlength="10"
+                                placeholder="Masukkan 10 digit angka" required autofocus>
+                            @error('nisn')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nama_anggota" class="form-label fw-semibold">Nama Anggota</label>
+                            <input type="text" name="nama_anggota" id="nama_anggota" value="{{ old('nama_anggota') }}"
+                                class="form-control @error('nama_anggota') is-invalid @enderror" maxlength="100"
+                                placeholder="Nama lengkap siswa" required>
+                            @error('nama_anggota')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold d-block">Jenis Kelamin</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input @error('jenis_kelamin') is-invalid @enderror" type="radio"
+                                    name="jenis_kelamin" id="jk_l" value="L"
+                                    {{ old('jenis_kelamin') === 'L' ? 'checked' : '' }} required>
+                                <label for="jk_l" class="form-check-label">Laki-laki</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input @error('jenis_kelamin') is-invalid @enderror" type="radio"
+                                    name="jenis_kelamin" id="jk_p" value="P"
+                                    {{ old('jenis_kelamin') === 'P' ? 'checked' : '' }}>
+                                <label for="jk_p" class="form-check-label">Perempuan</label>
+                            </div>
+                            @error('jenis_kelamin')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="kelas" class="form-label fw-semibold">Kelas</label>
+                            <input type="text" name="kelas" id="kelas" value="{{ old('kelas') }}"
+                                class="form-control @error('kelas') is-invalid @enderror" maxlength="20"
+                                placeholder="Contoh: XII PPLG 1" required>
+                            @error('kelas')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-lg me-1"></i>Simpan
+                            </button>
+                            <a href="{{ route('anggota.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Kembali
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="jenis_kelamin" id="jk_p" value="P"
-                    {{ old('jenis_kelamin') == 'P' ? 'checked' : '' }}>
-                <label for="jk_p" class="form-check-label">Perempuan</label>
-            </div><br><br>
-            <label for="kelas" class="form form-label">Kelas</label>
-            <input type="text" name="kelas" id="kelas" class="form form-control" value="{{ old('kelas') }}"
-                maxlength="20" required placeholder="Contoh : XII PPLG 1"><br>
-            <button type="submit" class="btn btn-primary">Simpan</button><br><br>
-            <a href="{{ route('anggota.index') }}" class="btn btn-success">Kembali</a>
-        </form>
+
+        </div>
     </div>
 @endsection
