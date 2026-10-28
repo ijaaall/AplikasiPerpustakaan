@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnggotaModel;
 use Illuminate\Http\Request;
 
 class AnggotaController extends Controller
@@ -12,6 +13,8 @@ class AnggotaController extends Controller
     public function index()
     {
         //
+        $anggota = AnggotaModel::all();
+        return view('anggota.index', compact('anggota'));
     }
 
     /**
@@ -20,6 +23,8 @@ class AnggotaController extends Controller
     public function create()
     {
         //
+        $anggota = AnggotaModel::all();
+        return view('anggota.create', compact('anggota'));
     }
 
     /**
@@ -28,6 +33,22 @@ class AnggotaController extends Controller
     public function store(Request $request)
     {
         //
+        $request->validate([
+            'nisn' => 'required',
+            'nama_anggota' => 'required',
+            'jenis_kelamin' => 'required',
+            'kelas' => 'required',
+        ]);
+
+        $anggota = [
+            'nisn' => $request->nisn,
+            'nama_anggota' => $request->nama_anggota,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'kelas' => $request->kelas,
+        ];
+
+        AnggotaModel::create($anggota);
+        return redirect()->route('anggota.index')->with('success', 'berhasil di simpan');
     }
 
     /**
@@ -44,6 +65,8 @@ class AnggotaController extends Controller
     public function edit(string $id)
     {
         //
+        $anggota = AnggotaModel::findOrFail($id);
+        return view('anggota.edit', compact('anggota'));
     }
 
     /**
@@ -52,6 +75,23 @@ class AnggotaController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $request->validate([
+            'nisn' => 'required',
+            'nama_anggota' => 'required',
+            'jenis_kelamin' => 'required',
+            'kelas' => 'required',
+        ]);
+
+        $anggota = AnggotaModel::findOrFail($id);
+
+        $anggota->update([
+            'nisn' => $request->nisn,
+            'nama_anggota' => $request->nama_anggota,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'kelas' => $request->kelas,
+        ]);
+
+        return redirect()->route('anggota.index')->with('success', 'berhasil di update');
     }
 
     /**
@@ -60,5 +100,7 @@ class AnggotaController extends Controller
     public function destroy(string $id)
     {
         //
+        AnggotaModel::where('id_anggota', $id)->delete();
+        return redirect()->route('anggota.index')->with('success', 'berhasil di hapus');
     }
 }

@@ -95,5 +95,7 @@ class PetugasController extends Controller
     public function destroy(string $id)
     {
         //
+        PetugasModel::where('id_petugas', $id)->delete();
+        return redirect()->route('petugas.index')->with('success', 'data berhasil di hapus');
     }
 }
