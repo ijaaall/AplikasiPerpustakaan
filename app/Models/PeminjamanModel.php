@@ -23,7 +23,7 @@ class PeminjamanModel extends Model
     {
         return $this->belongsTo(AnggotaModel::class, 'id_anggota');
     }
-    public function BUku()
+    public function Buku()
     {
         return $this->belongsTo(BukuModel::class, 'id_buku');
     }
