@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PeminjamanModel;
+use App\Models\PengembalianModel;
 use Illuminate\Http\Request;
+use App\Models\Peminjaman;
+use Carbon\Carbon;
 
 class PengembalianController extends Controller
 {
@@ -12,6 +16,9 @@ class PengembalianController extends Controller
     public function index()
     {
         //
+        $pengembalian = PengembalianModel::all();
+        $peminjaman = PeminjamanModel::all();
+        return view('pengembalian.index', compact('pengembalian', 'peminjaman'));
     }
 
     /**
@@ -19,7 +26,9 @@ class PengembalianController extends Controller
      */
     public function create()
     {
-        //
+        $pengembalian = PengembalianModel::all();
+        $peminjaman = PeminjamanModel::all();
+        return view('pengembalian.create', compact('pengembalian', 'peminjaman'));
     }
 
     /**
@@ -28,6 +37,34 @@ class PengembalianController extends Controller
     public function store(Request $request)
     {
         //
+        $request->validate([
+            'id_peminjaman' => 'required|exists:peminjaman,id_peminjaman',
+            'tanggal_kembali' => 'required|date',
+        ]);
+
+        $peminjaman = PeminjamanModel::findOrFail($request->id_peminjaman);
+
+        $batasKembali = Carbon::parse($peminjaman->tanggal_harus_kembali);
+        $tanggalKembali = Carbon::parse($request->tanggal_kembali);
+
+        $terlambatHari = 0;
+        if ($tanggalKembali->gt($batasKembali)) {
+            $terlambatHari = $tanggalKembali->diffInDays($batasKembali);
+        }
+
+        $denda = $terlambatHari * 1000;
+        $pengembalian = new PengembalianModel();
+        $pengembalian->id_peminjaman = $request->id_peminjaman;
+        $pengembalian->tanggal_kembali = $request->tanggal_kembali;
+        $pengembalian->terlambat_hari = $terlambatHari;
+        $pengembalian->denda = $denda;
+        $pengembalian->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data pengembalian berhasil disimpan.',
+            'data' => $pengembalian
+        ], 201);
     }
 
     /**
@@ -51,7 +88,39 @@ class PengembalianController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'id_peminjaman' => 'required|exists:peminjaman,id_peminjaman',
+            'tanggal_kembali' => 'required|date',
+        ]);
+
+        // 2. Cari data pengembalian yang ingin diubah
+        $pengembalian = PengembalianModel::findOrFail($id);
+
+        // 3. Ambil data peminjaman terkait untuk mengetahui batas waktu kembali
+        $peminjaman = PeminjamanModel::findOrFail($request->id_peminjaman);
+
+        $batasKembali = Carbon::parse($peminjaman->tanggal_harus_kembali); // Sesuaikan dengan nama kolom di tabel peminjaman Anda
+        $tanggalKembali = Carbon::parse($request->tanggal_kembali);
+
+        $terlambatHari = 0;
+        if ($tanggalKembali->gt($batasKembali)) {
+            $terlambatHari = $tanggalKembali->diffInDays($batasKembali);
+        }
+
+        $denda = $terlambatHari * 1000;
+
+        $pengembalian->id_peminjaman = $request->id_peminjaman;
+        $pengembalian->tanggal_kembali = $request->tanggal_kembali;
+        $pengembalian->terlambat_hari = $terlambatHari;
+        $pengembalian->denda = $denda;
+        $pengembalian->save();
+
+        // 7. Kembalikan respons sukses
+        return response()->json([
+            'success' => true,
+            'message' => 'Data pengembalian berhasil diperbarui.',
+            'data' => $pengembalian
+        ], 200);
     }
 
     /**
