@@ -42,7 +42,7 @@
                     <div class="mb-4">
                         <label for="tanggal_kembali" class="form-label fw-semibold">Tanggal Kembali</label>
                         <input type="date" name="tanggal_kembali" id="tanggal_kembali" class="form-control"
-                            value="{{ old('tanggal_kembali', date('Y-m-d')) }}" required>
+                            value="{{ old('tanggal_kembali', date('Y-m-d')) }}" readonly required>
                     </div>
 
                     <div class="d-flex justify-content-between">
