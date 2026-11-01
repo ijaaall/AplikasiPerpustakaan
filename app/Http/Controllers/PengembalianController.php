@@ -2,132 +2,105 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PeminjamanModel;
 use App\Models\PengembalianModel;
+use App\Models\PeminjamanModel;
 use Illuminate\Http\Request;
-use App\Models\Peminjaman;
 use Carbon\Carbon;
 
 class PengembalianController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
-        $pengembalian = PengembalianModel::all();
-        $peminjaman = PeminjamanModel::all();
-        return view('pengembalian.index', compact('pengembalian', 'peminjaman'));
+        $pengembalian = PengembalianModel::with('peminjaman.anggota', 'peminjaman.buku')->get();
+        return view('pengembalian.index', compact('pengembalian'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $pengembalian = PengembalianModel::all();
+        // Hanya ambil peminjaman yang statusnya masih dipinjam (opsional, sesuaikan kebutuhan)
         $peminjaman = PeminjamanModel::all();
-        return view('pengembalian.create', compact('pengembalian', 'peminjaman'));
+        return view('pengembalian.create', compact('peminjaman'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
         $request->validate([
-            'id_peminjaman' => 'required|exists:peminjaman,id_peminjaman',
+            'id_peminjaman' => 'required',
             'tanggal_kembali' => 'required|date',
         ]);
 
         $peminjaman = PeminjamanModel::findOrFail($request->id_peminjaman);
 
-        $batasKembali = Carbon::parse($peminjaman->tanggal_harus_kembali);
+        $tanggalHarusKembali = Carbon::parse($peminjaman->tanggal_harus_kembali);
         $tanggalKembali = Carbon::parse($request->tanggal_kembali);
 
         $terlambatHari = 0;
-        if ($tanggalKembali->gt($batasKembali)) {
-            $terlambatHari = $tanggalKembali->diffInDays($batasKembali);
+        $denda = 0;
+
+        if ($tanggalKembali->greaterThan($tanggalHarusKembali)) {
+            $terlambatHari = $tanggalHarusKembali->diffInDays($tanggalKembali);
+            $denda = $terlambatHari * 1000;
         }
 
-        $denda = $terlambatHari * 1000;
-        $pengembalian = new PengembalianModel();
-        $pengembalian->id_peminjaman = $request->id_peminjaman;
-        $pengembalian->tanggal_kembali = $request->tanggal_kembali;
-        $pengembalian->terlambat_hari = $terlambatHari;
-        $pengembalian->denda = $denda;
-        $pengembalian->save();
+        PengembalianModel::create([
+            'id_peminjaman' => $request->id_peminjaman,
+            'tanggal_kembali' => $request->tanggal_kembali,
+            'terlambat_hari' => $terlambatHari,
+            'denda' => $denda,
+        ]);
+        $peminjaman->update(['status' => 'Dikembalikan']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data pengembalian berhasil disimpan.',
-            'data' => $pengembalian
-        ], 201);
+        if ($peminjaman->buku) {
+            $peminjaman->buku->increment('stok');
+        }
+
+        return redirect()->route('pengembalian.index')->with('success', 'Data pengembalian berhasil ditambahkan, denda dihitung otomatis, dan stok buku bertambah.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
-        //
+        $pengembalian = PengembalianModel::findOrFail($id);
+        $peminjaman = PeminjamanModel::all();
+        return view('pengembalian.edit', compact('pengembalian', 'peminjaman'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'id_peminjaman' => 'required|exists:peminjaman,id_peminjaman',
+            'id_peminjaman' => 'required',
             'tanggal_kembali' => 'required|date',
         ]);
 
-        // 2. Cari data pengembalian yang ingin diubah
         $pengembalian = PengembalianModel::findOrFail($id);
-
-        // 3. Ambil data peminjaman terkait untuk mengetahui batas waktu kembali
         $peminjaman = PeminjamanModel::findOrFail($request->id_peminjaman);
 
-        $batasKembali = Carbon::parse($peminjaman->tanggal_harus_kembali); // Sesuaikan dengan nama kolom di tabel peminjaman Anda
+        // Hitung ulang otomatis saat di-update
+        $tanggalHarusKembali = Carbon::parse($peminjaman->tanggal_harus_kembali);
         $tanggalKembali = Carbon::parse($request->tanggal_kembali);
 
         $terlambatHari = 0;
-        if ($tanggalKembali->gt($batasKembali)) {
-            $terlambatHari = $tanggalKembali->diffInDays($batasKembali);
+        $denda = 0;
+
+        if ($tanggalKembali->greaterThan($tanggalHarusKembali)) {
+            $terlambatHari = $tanggalHarusKembali->diffInDays($tanggalKembali);
+            $denda = $terlambatHari * 1000;
         }
 
-        $denda = $terlambatHari * 1000;
+        $pengembalian->update([
+            'id_peminjaman' => $request->id_peminjaman,
+            'tanggal_kembali' => $request->tanggal_kembali,
+            'terlambat_hari' => $terlambatHari,
+            'denda' => $denda,
+        ]);
 
-        $pengembalian->id_peminjaman = $request->id_peminjaman;
-        $pengembalian->tanggal_kembali = $request->tanggal_kembali;
-        $pengembalian->terlambat_hari = $terlambatHari;
-        $pengembalian->denda = $denda;
-        $pengembalian->save();
-
-        // 7. Kembalikan respons sukses
-        return response()->json([
-            'success' => true,
-            'message' => 'Data pengembalian berhasil diperbarui.',
-            'data' => $pengembalian
-        ], 200);
+        return redirect()->route('pengembalian.index')->with('success', 'Data pengembalian berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        //
+        $pengembalian = PengembalianModel::findOrFail($id);
+        $pengembalian->delete();
+
+        return redirect()->route('pengembalian.index')->with('success', 'Data pengembalian berhasil dihapus.');
     }
 }

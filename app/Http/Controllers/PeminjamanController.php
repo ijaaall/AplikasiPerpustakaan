@@ -47,6 +47,11 @@ class PeminjamanController extends Controller
             'status' => 'required',
         ]);
 
+        BukuModel::where('id_buku', $request->id_buku)
+            ->where('stok', '>', 0)
+            ->firstOrFail()
+            ->decrement('stok');
+
         $peminjaman = [
             'tanggal_peminjaman' => $request->tanggal_peminjaman,
             'tanggal_harus_kembali' => $request->tanggal_harus_kembali,
@@ -94,7 +99,6 @@ class PeminjamanController extends Controller
             'id_petugas' => 'required',
             'status' => 'required',
         ]);
-
         $peminjaman = PeminjamanModel::findOrFail($id);
 
         $peminjaman->update([
